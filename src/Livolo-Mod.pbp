@@ -1,59 +1,9 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''                                    
-'     LANGUAGE:        PicBasic Pro                                            
-'    PROJECT:        Livolo-Mod
-'    AUTHOR:            Douglas Schafer    
-'                           Rhaurison Bergamin                            
-'    REVISION:        REV 2.1                                                    
-'     DESCRIPTION:    Livolo Touch Switch Mod
-'                    This program allows the sensor board of the Livolo switch to output serial commands to devices.                                                        
-'                                                                            
-'     DEVICE:            PIC16F690                                            
-'     FUSE SETTINGS:    OSC = INTRC_IO, MCLRE = Disable                            
-'                                                                            
-'            PIC16F688:           +--v--+                                       
-'                       +5V VDD >[     ]< VSS 0v                                 
-'                            A5 <[     ]> A0 
-'                            A4 <[     ]> A1 LED2                   
-'                            A3 <[     ]> A2 TCHARGE
-'                            C5 <[     ]> C0 
-'                            C4 <[     ]< C1 TOUCH1               
-'                            C3 <[     ]< C2 TOUCH2
-'                            C6 <[     ]> B4 LED1
-'                 1KR         C7 <[     ]< B5 RX                 
-'           ---/\/\/\/--- TX B7 <[     ]> B6                
-'                                +-----+   
 '
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-'====================================================
-'=========   CONFIG FOR 1 AND 2 Gang   =============
-Channels con 2  ; Define number of LIVOLO Channels (Gang): 1 or 2
-LED_0        var     PortA.5    ; L3 A0
-LED_1        var     PortB.6    ; L2
-LED_2        var     PortC.5    ; L1
-LED_3        var     PortA.0    ; A3
-TRISC         = %00001010
-'=========   CONFIG FOR 3 Gang   ===================
-;Channels con 3  ; Define number of LIVOLO Channels (Gang): 3
-;LED_0        var     PortA.5    ; L2
-;LED_1        var     PortA.1    ; L1
-;LED_2        var     PortA.0    ; A3
-;LED_3        var     PortB.4    ; L3 A0
-;TRISC         = %00001110
-'=====================================================
-RELAY_A    var     PortC.7    ; SW1
-RELAY_B    var     PortC.2    ; SW2
-RELAY_C    var     PortC.6    ; SW3
-                                  
-DEFINE OSC 4        ' Define Oscilator as 4Mhz
-DEFINE  HSER_BAUD 1200  ' We Use 1200 baud to increase the distance range
-DEFINE  HSER_CLROERR 1  ' Auto clear over-run errors
-DEFINE HSER_RCSTA 90h   ' Enable serial port & continuous receive               
-'define HSER_TXSTA 24H  ''Enable transmit, BRGH = 1   (for baud >=9600 only)
-define HSER_TXSTA 20H   ' for 1200 bps
-;DEFINE HSER_SPBRG 25                                 '   routine when you get data.
-;OSCCON        = %01110001            ' set OSC fuse bits to 8MHz
+'
+'''''''''''''''''''''''''''''''''''''''    MCU SETTINGS    '''''''''''''''''''''''''''''''''''''''''''''''''''
 OSCCON        = %01100001            ' set OSC fuse bits to 4MHz
-;OSCCON        = %01010001            ' set OSC fuse bits to 2MHz
+RCSTA  = %00000000              ' disable usart
 ANSEL        = %00000000            ' Analogue select 'off'
 ANSELH         = %00000000            ' Analogue select 'off'
 WPUA         = %00000000            ' Set Pullups PortA 'off'
@@ -66,174 +16,110 @@ CM2CON0        = %10100101            ' Comparator C2 Control Register 0
 CM2CON1        = %00000000            ' Comparator C2 Control Register 1
 SRCON        = %11110000            ' SR Latch Control Register
 VRCON        = %10000111            ' Voltage Ref Control Register
-PORTA         = %00000000
-TRISA         = %00000100            ' bit2 is for Timer input
-PORTB         = %00000000
-TRISB         = %00100000            ' port B5 is RX input
-PORTC         = %00000000
-'TXSTA  = %00100100
-'RCSTA  = %10010000
-;BAUDCTL = %00000000
 ;ADCON1      = %00001111    'Set up ADCON1 register no matter what you're doing!
-SW_ON        var        Bit[4]
-SW_ON[0] = 0    ; L3 (Left)                            ' SWITCH.0 select 1 if used, 0 if not: GANG TYPE, 4,
-SW_ON[1] = 0    ; L1 (right)                                    ' SWITCH.1 select 1 if used, 0 if not: GANG TYPE, 4, 2, and 1
-SW_ON[2] = 0    ; L2 (left/Center)                                ' SWITCH.2 select 1 if used, 0 if not: GANG TYPE, 4, 2,
-SW_ON[3] = 0    ; L4                                ' SWITCH.3 select 1 if used, 0 if not: GANG TYPE, 4,
-'''''''''''''''''''''''''''''''''''''''    DEFINE VARIABLES    '''''''''''''''''''''''''''''''''''''''''''''''''''
-SW_raw        var        Word[4]
-SW_average    var        Word[4]
-debounce    var        Byte[4]
-sense_time    var        Word[4]
-sense       var     word
+
+
+'''''''''''''''''''''''''''''''''''''''    APLICATION SETTINGS    '''''''''''''''''''''''''''''''''''''''''''''''''''
+C_CHANNELS con 2  ; Define number of LIVOLO Channels (Gang): 1, 2, 3 or 4
+C_SENSE    con 20 ; Increase to less sensitive, decrease makes it more sensitive.
+
+LED_0        var     PortB.6
+LED_1        var     PortC.5
+LED_INPUT_0  var     PortB.4
+LED_INPUT_1  var     PortB.5
+SW_OUTPUT_0  var     PortC.6
+SW_OUTPUT_1  var     PortC.7
+
+PORTA         = %00000000
+TRISA         = %00000100            ' bit2 is for Timer0 input
+PORTB         = %00000000
+TRISB         = %00110000
+PORTC         = %00000000
+TRISC         = %00001010
+'''''''''''''''''''''''''''''''''''''''    VARIABLES        '''''''''''''''''''''''''''''''''''''''''''''''''''
+SW_raw        var        Word[C_CHANNELS]
+SW_average    var        Word[C_CHANNELS]
+debounce      var        Byte[C_CHANNELS]
+sense_time    var        Word[C_CHANNELS]
 ch            var        Byte
-i            var        Byte
+i             var        Byte
 clear
-; devine how sensitivy it is. 
-;increase to less sensitive, decrease makes it more sensitive
-; 20 is a good number.
-sense = 20
 
-if channels = 1 then
-    SW_ON[1] = 1
-endif
-if channels = 2 then
-    SW_ON[1] = 1
-    SW_ON[2] = 1
-endif
-if channels = 3 then
-    SW_ON[1] = 1
-    SW_ON[2] = 1
-    SW_ON[3] = 1
-endif
-RELAY_A = 0
-RELAY_B = 0
-RELAY_C = 0
+for i = 0 to 9
+    toggle LED_0
+    pause 100
+next
 LED_0 = 0
-LED_1 = 0
-LED_2 = 0
-LED_3 = 0
 
-for i=0 to 9
+for i = 0 to 9
     toggle LED_1
     pause 100
 next
 LED_1 = 0
 
-for i=0 to 9
-    toggle LED_2
-    pause 100
-next
-LED_2 = 0
-
-for i=0 to 9
-    toggle LED_3
-    pause 100
-next
-LED_3 = 0
-
-'''''''''''''''''''''''''''''''''''''''''    USER NOTES    ''''''''''''''''''''''''''''''''''''''''''''''''''''
-;; WARNING:  THIS PROGRAM HAS BEEN TESTED ON 1 Gang, 2 GANG, AND 3 GANG SWITCH'S ;;
-
-GoSub CALIBRATE
 ''''''''''''''''''''''''''''''''''''''''''    MAIN PROGRAM    ''''''''''''''''''''''''''''''''''''''''''''''''''''
+gosub CALIBRATE
 
 START:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CHECK SW0
-ch=0
-If SW_ON[ch]=0 Then SKIP0    
-GoSub CHECK_SW
-If debounce[ch] = 1 Then
-    Toggle LED_0
-        If LED_0=1 Then
-        Else
-        EndIf
-EndIf
-SKIP0:
+ch = 0
+gosub CHECK_SW
+if debounce[ch] > 0 then
+    SW_OUTPUT_0 = 1
+    LED_0 = 1
+    debounce[ch] = 0
+    pause 100
+else
+    SW_OUTPUT_0 = 0
+    LED_0 = 0
+endif
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CHECK SW1
-ch=1
-If SW_ON[ch]=0 Then SKIP1
-GoSub CHECK_SW
-If debounce[ch] >= 1 Then
-    Toggle LED_1
-    pause 200
-        If LED_1=1 Then
-            RELAY_A = 1
-        Else
-            RELAY_A = 0
-        EndIf
-EndIf
-SKIP1:
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CHECK SW2
-ch=2
-If SW_ON[ch]=0 Then SKIP2    
-GoSub CHECK_SW
-If debounce[ch] = 1 Then
-    Toggle LED_2
+ch = 1
+gosub CHECK_SW
+if debounce[ch] > 0 then
+    SW_OUTPUT_1 = 1
+    LED_1 = 1
     debounce[ch] = 0
-    pause 200
-        If LED_2=1 Then
-            RELAY_B = 1
-        Else
-            RELAY_B = 0
-        EndIf
-EndIf
-SKIP2:
+    pause 100
+else
+    SW_OUTPUT_1 = 0
+    LED_1 = 0
+endif
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CHECK SW3
-ch=3
-If SW_ON[ch]=0 Then SKIP3
-GoSub CHECK_SW
-If debounce[ch] = 1 Then
-    Toggle LED_3
-        If LED_3=1 Then
-            RELAY_C = 1
-        Else
-            RELAY_C = 0
-        EndIf
-EndIf
-SKIP3:
-GoTo START
+goto START
 
 '''''''''''''''''''''''''''''''''''''''''    CHECK SWITCHES    '''''''''''''''''''''''''''''''''''''''''''''''''''
 CHECK_SW:
     CM1CON0.0 = 1                                ' change to correct input ch (bit 0)
-    CM1CON0.1 = ch.1                                ' change to correct input ch (bit 1)
+    CM1CON0.1 = ch.0                                ' change to correct input ch (bit 1)
     CM2CON0.0 = 1                                ' change to correct input ch (bit 0)
-    CM2CON0.1 = ch.1                                ' change to correct input ch (bit 1)
+    CM2CON0.1 = ch.0                                ' change to correct input ch (bit 1)
     TMR0 = 0                                        ' Reset the Timer 0
     PauseUs sense_time[ch]                            ' Pause for appropriate time to get default 200 cycles
     SW_raw[ch] = TMR0                                ' Get count value from Timer0
-    SW_raw[ch] = SW_raw[ch]*10                        ' Do some averaging
-    ;SW_average[ch] = (SW_average[ch]*9)+SW_raw[ch]
-    ;SW_average[ch] = SW_average[ch]/10
-    ;SW_average[ch] = SW_average[ch] + (SW_raw[ch] - SW_average[ch])/10
-    SW_average[ch] = (9*SW_average[ch]+SW_raw[ch])/10
+    SW_raw[ch] = SW_raw[ch] * 10                        ' Do some averaging
+    SW_average[ch] = (9 * SW_average[ch] + SW_raw[ch]) / 10
 
-    ;If SW_raw[ch] < (SW_average[ch]-10) Then         Check if switch is touched
-    If SW_raw[ch] < (SW_average[ch]- sense) Then ; 
+    if SW_raw[ch] < (SW_average[ch]- C_SENSE) then ; 
        debounce[ch] = debounce[ch] + 1                ' Debounce switch
-    Else
+    else
        debounce[ch] = 0
-    EndIf
-Return
+    endif
+return
 
 '''''''''''''''''''''''''''''''''''''''''    CHECK SWITCHES    '''''''''''''''''''''''''''''''''''''''''''''''''''
 CALIBRATE:
-For ch=1 to 3
-    If SW_ON[ch]=1 Then
-        sense_time[ch] = 0 ;it need a start point???  
-        SW_average[ch] = 0 ;inicial 
-        CAL_LOOP:
-        sense_time[ch]=sense_time[ch]+1
-        GoSub CHECK_SW
-        If SW_raw[ch]<2000 Then
-            GoTo CAL_LOOP
-        EndIf
-    EndIf
+for ch = 0 to 1
+    CAL_LOOP:
+    sense_time[ch] = sense_time[ch] + 1
+
+    gosub CHECK_SW
+
+    if SW_raw[ch] < 2000 then
+        goto CAL_LOOP
+    endif
 next
-Return
+return
 
 END
