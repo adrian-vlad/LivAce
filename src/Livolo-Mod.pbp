@@ -19,12 +19,13 @@ VRCON        = %10000111            ' Voltage Ref Control Register
 ;ADCON1      = %00001111    'Set up ADCON1 register no matter what you're doing!
 
 
-'''''''''''''''''''''''''''''''''''''''    APLICATION SETTINGS    '''''''''''''''''''''''''''''''''''''''''''''''''''
+'''''''''''''''''''''''''''''''''''''''    APPLICATION SETTINGS    '''''''''''''''''''''''''''''''''''''''''''''''''''
 C_CHANNELS con 2  ; Define number of LIVOLO Channels (Gang): 1, 2, 3 or 4
 C_SENSE    con 20 ; Increase to less sensitive, decrease makes it more sensitive.
 
 LED_0        var     PortB.6
 LED_1        var     PortC.5
+
 LED_INPUT_0  var     PortB.4
 LED_INPUT_1  var     PortB.5
 SW_OUTPUT_0  var     PortC.6
@@ -65,27 +66,27 @@ START:
 ch = 0
 gosub CHECK_SW
 if debounce[ch] > 0 then
-    SW_OUTPUT_0 = 1
-    LED_0 = 1
     debounce[ch] = 0
-    pause 100
+    pause 50
+    SW_OUTPUT_0 = 1
 else
     SW_OUTPUT_0 = 0
-    LED_0 = 0
 endif
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CHECK SW1
 ch = 1
 gosub CHECK_SW
 if debounce[ch] > 0 then
-    SW_OUTPUT_1 = 1
-    LED_1 = 1
     debounce[ch] = 0
-    pause 100
+    pause 50
+    SW_OUTPUT_1 = 1
 else
     SW_OUTPUT_1 = 0
-    LED_1 = 0
 endif
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; LEDs
+LED_0 = LED_INPUT_0
+LED_1 = LED_INPUT_1
 
 goto START
 
