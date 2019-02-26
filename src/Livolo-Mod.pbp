@@ -21,7 +21,7 @@ VRCON        = %10000111            ' Voltage Ref Control Register
 
 '''''''''''''''''''''''''''''''''''''''    APPLICATION SETTINGS    '''''''''''''''''''''''''''''''''''''''''''''''''''
 C_CHANNELS con 2  ; Define number of LIVOLO Channels (Gang): 1, 2, 3 or 4
-C_SENSE    con 20 ; Increase to less sensitive, decrease makes it more sensitive.
+C_SENSE    con 5 ; Increase to less sensitive, decrease makes it more sensitive.
 
 LED_0        var     PortB.6
 LED_1        var     PortC.5
